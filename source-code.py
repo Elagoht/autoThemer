@@ -2,6 +2,7 @@
 from PyQt5.QtWidgets import QLineEdit, QMessageBox, QWidget, QApplication, QMainWindow, QLabel, QGroupBox, QSpinBox, QPushButton, QGridLayout
 from sys import exit,argv
 from os import popen, system
+home=popen("echo $HOME").read().strip()
 class MainWin(QMainWindow):
     def __init__(self):
         super(QMainWindow,self).__init__()
@@ -85,7 +86,7 @@ class Central(QWidget):
 {self.edControls.text()}
 {self.edDesktop.text()}
 {self.sDay.text()}
-{self.sNight.text()}" > $HOME/.autoThemer/themes.ini""")
+{self.sNight.text()}" > {home}/.autoThemer/themes.ini""")
     def applyToSee(self,time):
         if time==0:
             if self.edMetacity.text()!="": system(f"gsettings set org.cinnamon.desktop.wm.preferences theme '{self.edMetacity.text()}'")
@@ -97,11 +98,12 @@ class Central(QWidget):
             if self.enDesktop.text()!="": system(f"gsettings set org.cinnamon.theme name '{self.enDesktop.text()}'")
         QMessageBox.information(self,"Success","Changes applied. If you notice a bug press Ctrl+Alt+Esc to reload Cinnamon.")
     def enableApp(self):
-        system("""echo '#!/usr/bin/python3
+        system(f"mkdir -p {home}/.autoThemer/")
+        system(f"""echo '#!/usr/bin/python3
 from os import system
 from time import sleep
 from datetime import datetime as dt
-with open("themes.ini","r") as file:
+with open("{home}/themes.ini","r") as file:
     data=file.readlines()
     for i in range(len(data)): data[i]=data[i].replace("\\\\n","")
     data[6]=int(data[6])
@@ -117,25 +119,26 @@ while True:
         if data[0]!="": system("gsettings set org.cinnamon.desktop.wm.preferences theme "+data[0])
         if data[1]!="": system("gsettings set org.cinnamon.desktop.interface gtk-theme "+data[1])
         if data[2]!="": system("gsettings set org.cinnamon.theme name "+data[2])
-        sleep(600)' > $HOME/.autoThemer/autoThemer.py""")
+        sleep(600)' > {home}/.autoThemer/autoThemer.py""")
+        system(f"mkdir -p {home}/.config/autostart")
         system(f"""echo '[Desktop Entry]
 Name=autoThemer
-Exec=bash -c "cd /home/furkan/.autoThemer/ && ./autoThemer.py"
+Exec=bash -c "cd {home}/.autoThemer/ && ./autoThemer.py"
 Comment=Auto Theme Changer
 Terminal=false
 Icon=gtk-theme-config
-Type=Application' > {popen("echo $HOME").read().strip()}/.config/autostart/autoThemer.desktop """)
+Type=Application' > {home}/.config/autostart/autoThemer.desktop """)
         print(f"""echo '[Desktop Entry]
 Name=autoThemer
-Exec=bash -c "cd /home/furkan/.autoThemer/ && ./autoThemer.py"
+Exec=bash -c "cd {home}/.autoThemer/ && ./autoThemer.py"
 Comment=Auto Theme Changer
 Terminal=false
 Icon=gtk-theme-config
-Type=Application' > {popen("echo $HOME").read().strip()}/.config/autostart/autoThemer.desktop """)
-        system(f"chmod +x {popen('echo $HOME').read().strip()}/.config/autostart/autoThemer.desktop")
+Type=Application' > {home}/.config/autostart/autoThemer.desktop """)
+        system(f"chmod +x {home}/.config/autostart/autoThemer.desktop")
         QMessageBox.information(self,"Enabled","AutoThemer will start after re-login.")
     def disableApp(self):
-        system("rm $HOME/.config/autostart/autoThemer.desktop")
+        system(f"rm {home}/.config/autostart/autoThemer.desktop")
         QMessageBox.information(self,"Disabled","To close AutoThemer, re-login. Program will not start unless you enable it.")
 app=QApplication(argv)
 main=MainWin()
